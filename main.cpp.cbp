@@ -1,27 +1,457 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-<CodeBlocks_project_file>
-	<FileVersion major="1" minor="6" />
-	<Project>
-		<Option title="main.cpp" />
-		<Option pch_mode="2" />
-		<Option compiler="gcc-mingw32" />
-		<Build>
-			<Target title="Debug">
-				<Option output="bin/Debug/main.cpp" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj/Debug/" />
-				<Option type="1" />
-				<Option compiler="gcc-mingw32" />
-			</Target>
-			<Target title="Release">
-				<Option output="bin/Release/main.cpp" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj/Release/" />
-				<Option type="1" />
-				<Option compiler="gcc-mingw32" />
-			</Target>
-		</Build>
-		<Unit filename="main.cpp" />
-		<Extensions>
-			<lib_finder disable_auto="1" />
-		</Extensions>
-	</Project>
-</CodeBlocks_project_file>
+#include <GL/freeglut.h> //libreria de opengl
+#include <cmath>
+#include <ctime>
+
+
+
+float limitesombrapel= 0.0f;  // Nueva variable para posición Z límite
+bool limites = false;
+clock_t tiempoinicio = 0;  // Inicializado a 0
+const float alturainicialsol = 24.0f;
+const float velocidadsol = 0.012f;
+
+float sombrillasombra = 0.0f;
+bool sombrillasombralimite = false;
+clock_t contadorsombrilla = 0;
+float sombrillaesclasombra = 1.3f; // escala inicial
+float reduccionsombrilla = 1.3f / (90.0f * 70.0f); // cuánto disminuir por frame (60 fps)
+bool sombracomprobante= true; //comprueba si la sombra se reduce
+int camara = 0;
+// Posiciones
+float pelotax = -8.0f;
+float pelotaz = -4.0f;
+float rotacionpelota = 0.0f;
+float soly = 24.0f;
+float solz = -3.0f;
+float solx = 9.0f;
+
+// Actualización de la animación
+void timer(int value) {
+    // Movimiento y rotación de la pelota
+    pelotax += 0.00999f;
+    rotacionpelota += -3.3f;
+    if (pelotax > 10.8) pelotax = -8.0f;
+
+    // Movimiento del sol hacia abajo
+    soly -= 0.012f;
+    if (soly < 1.4f) soly = 24.0f;
+
+    // Sombra de la sombrilla
+    if (sombracomprobante) {
+        sombrillaesclasombra -= reduccionsombrilla;
+        if (sombrillaesclasombra <= 0.9) {
+            sombrillaesclasombra = 1.3f;
+             sombracomprobante = true;
+        }
+    }
+
+    glutPostRedisplay();
+    glutTimerFunc(16, timer, value); // actualiza la escena cada 16 milisegundos (60fps)
+
+}
+void limite() {
+    // Calcular posición del sol a los 11 segundos
+    float solylimi = alturainicialsol - (velocidadsol * 60 * 11);
+    if (solylimi < 1.0f) solylimi = 1.0f;
+
+    // Calcular los valores límite de escala
+    float limite11seg = (26.0f - solylimi);
+
+
+    // Calcular posición límite (usamos la posición actual de la pelota)
+    float t = 0.5f / (solylimi - 0.5f);
+    limitesombrapel = pelotaz + 2.2f + t * (pelotaz - 90.0f);
+
+    limites = true;
+}
+void sol() {
+    glPushMatrix();
+    glColor3f(1.0f, 0.8f, 0.0f); // amarillo sol
+    glTranslatef(-6.0f, solz, 90.0f);
+    glTranslatef(18.0f, soly, 0.0f);
+    glutSolidSphere(9.0f, 20, 20);
+    glPopMatrix();
+}
+void pelota() {
+
+    int divisionesy = 24, divisionesx = 70;
+    float radio = 0.5f;
+
+    for (int i = 0; i < divisionesy; ++i) {
+        float theta1 = i * 2.0f * M_PI / divisionesy;
+        float theta2 = (i + 1) * 2.0f * M_PI / divisionesy;
+
+        glBegin(GL_QUAD_STRIP);
+        for (int j = 0; j <= divisionesx; ++j) {
+            float phi = j * M_PI / divisionesx;
+            float x1 = cos(theta1) * sin(phi);
+            float y1 = cos(phi);
+            float z1 = sin(theta1) * sin(phi);
+
+            float x2 = cos(theta2) * sin(phi);
+            float y2 = cos(phi);
+            float z2 = sin(theta2) * sin(phi);
+
+            // Divide en 4 colores distintos
+            switch (i % 23) {
+
+                case 0: glColor3f(1.0, 1.0, 0.0); break;
+                case 1: glColor3f(1.0, 1.0, 0.0); break;
+                case 2: glColor3f(1.0, 1.0, 0.0); break;
+                case 3: glColor3f(1.0, 1.0, 0.0); break;
+
+                case 4: glColor3f(1.0, 1.0, 1.0); break;
+                case 5: glColor3f(1.0, 1.0, 1.0); break;
+                case 6: glColor3f(1.0, 1.0, 1.0); break;
+                case 7: glColor3f(1.0, 1.0, 1.0); break;
+
+                case 8: glColor3f(0.0, 1.0, 1.0); break;
+                case 9: glColor3f(0.0, 1.0, 1.0); break;
+                case 10: glColor3f(0.0, 1.0, 1.0); break;
+                case 11: glColor3f(0.0, 1.0, 1.0); break;
+
+                case 12: glColor3f(1.0, 1.0, 1.0); break;
+                case 13: glColor3f(1.0, 1.0, 1.0); break;
+                case 14: glColor3f(1.0, 1.0, 1.0); break;
+                case 15: glColor3f(1.0, 1.0, 1.0); break;
+
+                case 16: glColor3f(1.0, 0.0, 0.0); break;
+                case 17: glColor3f(1.0, 0.0, 0.0); break;
+                case 18: glColor3f(1.0, 0.0, 0.0); break;
+                case 19: glColor3f(1.0, 0.0, 0.0); break;
+
+
+                case 20: glColor3f(1.0, 1.0, 1.0); break;
+                case 21: glColor3f(1.0, 1.0, 1.0); break;
+                case 22: glColor3f(1.0, 1.0, 1.0); break;
+                case 23: glColor3f(1.0, 1.0, 1.0); break;
+                }
+
+
+            glVertex3f(radio * x1, radio * y1, radio * z1);
+            glVertex3f(radio * x2, radio * y2, radio * z2);
+        }
+        glEnd();
+    }
+
+
+
+         // Polo superior (plano)
+    glColor3f(0.0f, 1.0f, 0.0f);
+    glBegin(GL_TRIANGLE_FAN);
+        glVertex3f(0.0f, 0.5f, 0.0f); // centro del polo superior
+        for (int i = 0; i <= 36; ++i) {
+            float angulo = i * 2.0f * M_PI / 36;
+            float x = 0.06f * cos(angulo);
+            float z = 0.06f * sin(angulo);
+            glVertex3f(x, 0.5f, z);
+        }
+    glEnd();
+
+    // Polo inferior (plano)
+    glColor3f(0.0f, 1.0f, 0.0f);
+    glBegin(GL_TRIANGLE_FAN);
+        glVertex3f(0.0f, -0.5f, 0.0f); // centro del polo inferior
+        for (int i = 0; i <= 36; ++i) {
+            float angulo = i * 2.0f * M_PI / 36;
+            float x = 0.06f * cos(angulo);
+            float z = 0.06f * sin(angulo);
+            glVertex3f(x, -0.5f, z);
+        }
+    glEnd();
+
+
+}
+void sombrapelota() {
+    const float sunX = 12.0f, solz = 90.0f;
+    float alturabalon = 0.5f;
+    float proporcion = alturabalon / (soly - alturabalon);
+
+    // Iniciar temporizador y verificar límites
+    if (!limites && tiempoinicio == 0)
+        tiempoinicio = clock();
+    if (!limites && (float)(clock() - tiempoinicio) / CLOCKS_PER_SEC >= 11.0f)
+        limite();
+
+    // Posición de la sombra
+    float sombrax = pelotax + 0.4f + proporcion * (pelotax - sunX);
+    float sombraz = limites ? limitesombrapel : pelotaz + 2.2f + proporcion * (pelotaz - solz);
+
+    // --- ESCALA INVERSA ---
+    // A menor sunY => sombra más grande
+    float solaltura = fmin(fmax(soly, 10.0f), 26.0f);  // entre 10 y 26
+    float proporcionnormal = (solaltura - 10.0f) / (26.0f - 10.0f); // normalizado entre 0 y 1
+
+    // tNorm = 0 (sol bajo) -> grande
+    // tNorm = 1 (sol alto) -> pequeño
+    float escalamax = 1.2f;
+    float minScale = 0.4f;
+
+    float sombraescala = escalamax - (escalamax - minScale) * proporcionnormal;
+    float anchura = 1.0f + 0.2f * (1.0f);  // más redonda (menos stretch)
+
+    // Limitar si ya pasaron 11 segundos
+    if (limites) {
+        sombraescala = fmax(sombraescala, 0.4f);
+        anchura = fmin(anchura, 1.1f);
+    }
+
+    // --- DIBUJAR SOMBRA ---
+    glPushMatrix();
+    glTranslatef(sombrax, 0.02f, sombraz);
+    glColor4f(0.0f, 0.0f, 0.0f, 0.3f);
+
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f(0.0f, 0.0f, 0.0f);
+    for (int i = 0; i <= 36; ++i) {
+        float angulo = i * 10.0f * M_PI / 180.0f;
+        float x = -sombraescala * 0.45f * cos(angulo);
+        float z = -sombraescala * 0.45f * anchura * sin(angulo);  // más redonda
+        glVertex3f(x, 0.0f, z + 0.1f);
+    }
+    glEnd();
+
+    glPopMatrix();
+}
+void sombrilla() {
+    // Poste de la sombrilla (más bajo)
+    glColor3f(0.4f, 0.2f, 0.1f); // marrón
+    glPushMatrix();
+    glTranslatef(4.0f, 0.0f, -5.9f); // bajado un poco
+    glRotatef(-90.0f, 1.0f, 0.0f, 0.0f); // vertical
+    GLUquadric* quad = gluNewQuadric();
+    gluCylinder(quad, 0.05, 0.05, 2.0, 12, 3);
+    gluDeleteQuadric(quad);
+    glPopMatrix();
+
+    // Parte superior (toldo) (también más baja)
+    glColor3f(1.0f, 0.0f, 0.4f); // rosa fuerte
+    glPushMatrix();
+    glTranslatef(4.0f, 1.7f, -6.0f); // bajado un poco
+    glRotatef(-80.0f, 1.0f, 0.0f, 0.0f);
+    quad = gluNewQuadric();
+    gluCylinder(quad, 1.4, 0.0, 1.0, 20, 4); // forma de cono
+    gluDeleteQuadric(quad);
+    glPopMatrix();
+}
+void toalla() {
+    float anchotoalla = 1.4f;    // Ancho de la toalla
+    float largotoalla = 3.0f;   // Largo de la toalla
+    int rayastoalla = 10;      // Número de rayas (pares: rojo y blanco)
+
+    float toallay = 0.001f; // Altura para evitar z-fighting (ligeramente sobre la arena)
+
+    float toallax = 3.2f;  // Centro de la toalla en X
+    float toallaz = -7.0f; // Centro de la toalla en Z
+
+    glPushMatrix();
+    glTranslatef(toallax, toallay, toallaz); // Coloca la manta sobre la arena sin rotar
+
+    glBegin(GL_QUADS);
+    for (int i = 0; i < rayastoalla; i++) {
+        // Alternar colores rojo y blanco
+        if (i % 2 == 0) glColor3f(1.0f, 0.0f, 0.0f);   // Rojo
+        else            glColor3f(1.0f, 1.0f, 1.0f);   // Blanco
+
+        float z1 = -largotoalla / 2 + (i * largotoalla / rayastoalla);
+        float z2 = z1 + largotoalla / rayastoalla;
+
+        glVertex3f(-anchotoalla / 2, 0.0f, z1);
+        glVertex3f( anchotoalla / 2, 0.0f, z1);
+        glVertex3f( anchotoalla / 2, 0.0f, z2);
+        glVertex3f(-anchotoalla / 2, 0.0f, z2);
+    }
+    glEnd();
+
+    glPopMatrix();
+}
+void sombrasombrilla() {
+    glColor4f(0.0f, 0.0f, 0.0f, 0.3f);
+    glPushMatrix();
+    glTranslatef(3.60f, 0.002f, -7.1f);
+    glScalef(sombrillaesclasombra, 0.0f, sombrillaesclasombra); // escala animada
+    glBegin(GL_TRIANGLE_FAN);
+        glVertex3f(0.0f, 0.0f, 0.0f);
+        for (int i = 0; i <= 30; i++) {
+            float angulo = i * 2.0f * M_PI / 30;
+            glVertex3f(cos(angulo), 0.0f, sin(angulo));}
+    glEnd();
+    glPopMatrix();}
+void sombraposte() {
+    glColor4f(0.0f, 0.0f, 0.0f, 0.3f); // sombra negra semitransparente
+
+    glPushMatrix();
+
+    // Posición cerca de la base del poste de la sombrilla
+    // Poste está en (4.0, 0.0, -5.9) pero sombra va pegada al suelo y un poco desplazada
+    glTranslatef(4.0f, 0.001f, -6.2f);
+
+    // Escala para hacer la sombra alargada y delgada
+    // Ajusta estos valores para el largo y ancho de la sombra
+    glScalef(0.05f, 0.001f, 6.5f); // muy delgada en X, larga en Z
+
+    // Dibuja un rectángulo plano (palo)
+    glBegin(GL_QUADS);
+        glVertex3f(-1.0f, 0.0f, -0.05f);
+        glVertex3f( 1.0f, 0.0f, -0.05f);
+        glVertex3f( 1.0f, 0.0f,  0.05f);
+        glVertex3f(-1.0f, 0.0f,  0.05f);
+    glEnd();
+
+    glPopMatrix();
+}
+
+
+void dibujoenpantalla() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+glEnable(GL_BLEND);
+glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glMatrixMode(GL_MODELVIEW);
+
+    glLoadIdentity();//camaras
+    switch (camara) {
+    case 0: // Cámara fija
+        gluLookAt(-6.0, 2.0,-8.0,
+                  0.0, 0.0, 0.0,
+                  0.0, 1.0, 0.0);
+        break;
+
+    case 1: // Vista superior siguiendo a la pelota
+        gluLookAt(pelotax, 10.0f, pelotaz + 0.01f,
+                  pelotax, 0.0f, pelotaz,
+                  0.0f, 0.0f, -1.0f);
+        break;
+
+    case 2: // Vista en tercera persona siguiendo a la pelota
+        gluLookAt(pelotax + 1.0f, 3.0f, pelotaz - 10.0f,
+                  pelotax, 0.5f, pelotaz,
+                  0.0f, 1.0f, 0.0f);
+                  }
+//  arena
+glBegin(GL_QUADS);
+    glColor3f(0.93f, 0.79f, 0.69f); // beige claro
+    glVertex3f(-46.0f, 0.0f, -19.0f);
+
+    glColor3f(0.89f, 0.76f, 0.60f); // tono más tostado
+    glVertex3f(26.0f, 0.0f, -10.0f);
+
+    glColor3f(0.85f, 0.72f, 0.55f); // tono cálido
+    glVertex3f(26.0f, 0.0f, 5.0f);
+
+    glColor3f(0.92f, 0.78f, 0.66f); // intermedio
+    glVertex3f(-26.0f, 0.0f, 5.0f);
+glEnd();
+
+    // mar
+    glColor3f(0.0f, 0.5f, 0.8f); // azul mar
+    glBegin(GL_QUADS);
+        glVertex3f( 60.0f, 0.2f,  60.0f);
+        glVertex3f( -30.0f, 0.2f,  60.0f);
+        glVertex3f( -60.0f, 0.2f,  0.0f);
+        glVertex3f( 60.0f, 0.2f,  0.0f);
+    glEnd();
+
+   // sol
+    sol();
+
+    // sombra de la pelota
+    sombrapelota();
+
+    // toalla
+    toalla();
+    sombrilla();
+    sombrasombrilla();
+  sombraposte();
+
+    // pelota
+    glPushMatrix();
+    glTranslatef(pelotax, 0.5f, pelotaz); //movimiento
+    glRotatef(rotacionpelota, 0.0f, 0.0f, 1.0f); // rotación sobre Z
+    pelota(); //dibujo de la pelota
+
+    //funciones para mostrar la animacion en pantalla
+    glPopMatrix();
+    glutSwapBuffers();
+}
+void reseteo() {
+    // Reiniciar todas las variables de animación
+
+    limitesombrapel = 0.0f;
+    limites = false;
+    tiempoinicio = 0;
+
+    sombrillasombra = 0.0f;
+   sombrillasombralimite = false;
+    contadorsombrilla= 0;
+   sombrillaesclasombra = 1.3f;
+    sombracomprobante = true;
+
+    // Reiniciar posiciones
+    pelotax = -8.0f;
+    pelotaz = -4.0f;
+    rotacionpelota = 0.0f;
+    soly = 24.0f;
+    solz = -3.0f;
+    solx = 9.0f;
+}
+void cambiodecamara(unsigned char tecla, int x, int y) {
+    static bool pantallacompleta = false;
+
+    switch(tecla) {
+        case 'c':
+        case 'C':
+            camara = (camara + 1) % 3;
+            glutPostRedisplay();
+            break;
+
+        case '9':
+        case 'f':
+        case 'F':
+            exit(0); // Salida limpia
+            break;
+
+        case 'r':
+        case 'R':
+            reseteo();
+            break;
+
+        case ' ':
+            pantallacompleta = !pantallacompleta;
+            if(pantallacompleta)
+                glutFullScreen();
+            else {
+                glutPositionWindow(100, 100);
+                glutReshapeWindow(1920, 1080);
+            }
+            break;
+    }
+}
+void init() {
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND); // funcion que habilita el mezclado de colores
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // Configura la mezcla para transparencia
+
+    glClearColor(0.4f, 0.8f, 1.0f, 1.0f); // cielo azul
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(60.0, 800.0 / 600.0, 1.0, 100.0);
+    glMatrixMode(GL_MODELVIEW);
+
+
+}
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutInitWindowSize(1920, 1080);
+    glutCreateWindow("Pelota de playa rodando en la arena - OpenGL");
+
+    init();
+    glutDisplayFunc(dibujoenpantalla);
+    glutTimerFunc(0, timer, 0);  // Usar timer de GLUT en lugar de manual
+    glutKeyboardFunc(cambiodecamara);
+
+
+    glutMainLoop(); // Bucle principal estándar de GLUT
+    return 0;
+}
